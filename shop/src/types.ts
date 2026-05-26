@@ -4,3 +4,14 @@ export interface Product{
     price: number;
     image: string | null;
 }
+
+export interface Category{
+    id: number;
+    name: string;
+}
+
+export interface ApiResponse<T>{
+    data: T
+    message?: string
+    success: boolean
+}
