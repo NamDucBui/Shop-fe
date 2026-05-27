@@ -1,22 +1,43 @@
-import { createContext, useState, type ReactNode } from "react"
+// src/context/AuthContext.tsx
+import { createContext, useState, useContext } from 'react';
 
-interface AuthContextType{
-    isAuthenticated: boolean
-    login: () => void
-    logout: () => void
+interface User {
+  name: string
+  email?: string
+  role?: string
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined)
+interface AuthContextType {
+  user: User | null
+  setUser: (user: User | null) => void
+}
 
-export const AuthProvider = ({children}: {children: ReactNode}) => {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+const AuthContext = createContext<AuthContextType | null>(null);
 
-    const login = () => setIsAuthenticated(true)
-    const logout = () => setIsAuthenticated(false)
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUserState] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
-    return(
-        <AuthContext.Provider value={{isAuthenticated, login, logout}}>
-            {children}
-        </AuthContext.Provider>
-    )
+  const setUser = (newUser: User | null) => {
+    setUserState(newUser)
+    if(newUser){
+      localStorage.setItem("user", JSON.stringify(newUser))
+    } else {
+      localStorage.removeItem("user")
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, setUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext)
+  if(!ctx) throw new Error("useAuth phải dùng trong AuthProvider")
+  return ctx
 }
