@@ -1,67 +1,64 @@
 // src/store/useCartStore.ts
 import { create } from "zustand"
 import { apiClient } from "../api/client"
-import type { Product } from "../types"
+import type { CartItem } from "../types"
 
-interface CartItem {
-    id: number
-    product_id: number
-    quantity: number
-    products: Product
-}
+
 interface CartStore {
-    items: CartItem[]
-    total: number
-    fetchCart: () => Promise<void>
-    addToCart: (productId: number, quantity: number) => Promise<void>
-    updateCartItem:  (productId: number, quantity: number) => Promise<void>
-    removeFromCart:  (productId: number) => Promise<void>
-    clearCart:       () => Promise<void>
+  items: CartItem[]
+  total: number
+  fetchCart: () => Promise<void>
+  addToCart: (productId: number, quantity: number) => Promise<void>
+  updateCartItem: (productId: number, quantity: number) => Promise<void>
+  removeFromCart: (productId: number) => Promise<void>
+  clearCart: () => Promise<void>
 }
+
+const calcTotal = (item: CartItem[]) =>
+  item.reduce((sum, i) => sum + Number(i.products?.price ?? 0) * i.quantity, 0)
 
 export const useCartStore = create<CartStore>((set) => ({
-    items: [],
-    total: 0,
+  items: [],
+  total: 0,
 
-    fetchCart: async () => {
-        try {
-            const res = await apiClient.get('/cart')
-            set({ items: res.data.cart_items || [] })
-        } catch (error) {
-            console.error("Lỗi khi lấy dữ liệu giỏ hàng:", error);
-            set({ items: [] })
-        }
-    },
+  fetchCart: async () => {
+    try {
+      const res = await apiClient.get('/cart')
+      const items = res.data.cart_items || []
+      set({ items, total: calcTotal(items) })
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu giỏ hàng:", error);
+      set({ items: [] })
+    }
+  },
 
-    addToCart: async (product_id, quantity) => {
-        try {
-            const res = await apiClient.post('/cart', { product_id, quantity })
-            const newItem = res.data?.item
+  addToCart: async (product_id, quantity) => {
+    try {
+      const res = await apiClient.post('/cart', { product_id, quantity })
+      const newItem = res.data?.item
 
-            if (newItem) {
-                set(state => {
-                    const exists = state.items.find(i => i.product_id === newItem.product_id)
+      if (newItem) {
+        set(state => {
+          const exists = state.items.find(i => i.product_id === newItem.product_id)
 
-                    if (exists) {
-                        return {
-                            items: state.items.map(i =>
-                                i.product_id === newItem.product_id
-                                    ? { ...i, quantity: newItem.quantity }
-                                    : i
-                            )
-                        }
-                    } else {
-                        return { items: [...state.items, newItem] }
-                    }
-                })
-            }
-        } catch (error) {
-            console.error("Lỗi khi thêm vào giỏ hàng: ", error)
-            throw error
-        }
-    },
+          const updatedItems = exists
+            ? state.items.map(i =>
+              i.product_id === newItem.product_id
+                ? { ...i, quantity: newItem.quantity }
+                : i
+            )
+            : [...state.items, newItem]
 
-    updateCartItem: async (productId, quantity) => {
+          return { items: updatedItems, total: calcTotal(updatedItems) }
+        })
+      }
+    } catch (error) {
+      console.error("Lỗi khi thêm vào giỏ hàng: ", error)
+      throw error
+    }
+  },
+
+  updateCartItem: async (productId, quantity) => {
     try {
       const res = await apiClient.put(`/cart/${productId}`, { quantity })
       const updatedItem = res.data?.item

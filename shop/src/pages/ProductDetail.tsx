@@ -4,13 +4,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { Product } from "../types";
 import { apiClient } from "../api/client";
 import { useCartStore } from "../store/useCartStore";
+import { BASE_URL } from "../config";
 
 export const ProductDetail = () => {
     const { id } = useParams<{ id: string }>();
     const [product, setProduct] = useState<Product | null>(null);
     const addToCart = useCartStore((state) => state.addToCart);
     const navigate = useNavigate();
-    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
 
     useEffect(() => {
         apiClient.get<Product>(`/products/${id}`).then((res) => setProduct(res.data));
@@ -34,6 +34,31 @@ export const ProductDetail = () => {
 
     if (!product) return <div>Đang tải thông tin sản phẩm...</div>;
 
+    const handleBuyNow = () => {
+        if (!product) return;
+        
+        // Kiểm tra xem user đăng nhập chưa bằng token
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Vui lòng đăng nhập trước khi mua hàng!");
+            navigate('/login');
+            return;
+        }
+
+        // Đóng gói sản phẩm hiện tại đúng định dạng CheckoutItem và điều hướng thẳng
+        navigate('/orders', {
+            state: {
+                isDirectBuy: true,
+                items: [{
+                    product_id: product.id,
+                    name: product.name,
+                    quantity: 1, // Mặc định mua ngay 1 sản phẩm
+                    price: Number(product.price)
+                }]
+            }
+        });
+    };
+
     return (
         <div style={{
             display: 'flex',
@@ -48,7 +73,7 @@ export const ProductDetail = () => {
             <div style={{ flex: 1 }}>
                 <img
                     src={product.image
-                        ? `${baseUrl}${product.image}`
+                        ? `${BASE_URL}${product.image}`
                         : "/placeholder.png"
                     }
                     alt={product.name}
@@ -78,6 +103,7 @@ export const ProductDetail = () => {
                         Thêm vào giỏ
                     </button>
                     <button
+                        onClick={handleBuyNow}
                         style={{ padding: '12px 24px', background: '#d70018', border: 'none', color: '#fff', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap' }}
                     >
                         Mua ngay

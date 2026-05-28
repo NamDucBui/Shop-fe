@@ -20,14 +20,7 @@ export const Navbar = () => {
     // Trong Navbar.tsx, cập nhật hàm handleLogout
     const handleLogout = async () => {
         try {
-            const token = localStorage.getItem("token"); // Lấy token từ localStorage
-
-            // Gọi API logout với Header chứa token
-            await apiClient.post('/auth/logout', {}, {
-                headers: {
-                    Authorization: `Bearer ${token}` // Gửi token lên để server xác thực
-                }
-            });
+            await apiClient.post('/auth/logout')
 
             setUser(null);
             localStorage.removeItem("token");
@@ -125,11 +118,35 @@ export const Navbar = () => {
                     {showMenu && (
                         <div style={{
                             position: "absolute", top: "100%", right: 0,
-                            background: "white", padding: "10px", borderRadius: 4,
-                            boxShadow: "0 2px 5px rgba(0,0,0,0.2)", cursor: "pointer",
-                            color: "#e53935"
-                        }} onClick={handleLogout}>
-                            Đăng xuất
+                            background: "white", borderRadius: 4,
+                            boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+                            minWidth: 160, overflow: "hidden"
+                        }}>
+                            {/* Lịch sử đơn hàng */}
+                            <div
+                                onClick={() => { navigate('/my'); setShowMenu(false) }}
+                                style={{
+                                    padding: "10px 16px", cursor: "pointer", color: "#333",
+                                    fontSize: 14, borderBottom: "1px solid #f0f0f0"
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "#f5f5f5")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "white")}
+                            >
+                                📦 Lịch sử đơn hàng
+                            </div>
+
+                            {/* Đăng xuất */}
+                            <div
+                                onClick={handleLogout}
+                                style={{
+                                    padding: "10px 16px", cursor: "pointer", color: "#e53935",
+                                    fontSize: 14
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "#fff5f5")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "white")}
+                            >
+                                🚪 Đăng xuất
+                            </div>
                         </div>
                     )}
                 </div>

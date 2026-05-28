@@ -5,6 +5,8 @@ import { ProductDetail } from "./pages/ProductDetail"
 import { AuthPage } from "./pages/AuthPage"
 import { ProtectedRoute } from "./components/ProtectedRoute"
 import { CartPage } from "./pages/CartPage"
+import { CheckoutPage } from "./pages/CheckoutPage"
+import { OrderHistoryPage } from "./pages/OrderHistoryPage"
 
 function App() {
   return (
@@ -15,6 +17,7 @@ function App() {
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/login" element={<AuthPage isLogin={true} />} />
         <Route path="/register" element={<AuthPage isLogin={false} />} />
+        <Route path="/orders" element={<CheckoutPage />} />
         <Route
           path="/cart"
           element={
@@ -23,6 +26,11 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/my" element={
+          <ProtectedRoute>
+            <OrderHistoryPage />
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   )

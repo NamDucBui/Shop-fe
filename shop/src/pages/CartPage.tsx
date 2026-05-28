@@ -1,6 +1,7 @@
 // src/pages/CartPage.tsx
 import { useEffect } from "react"
 import { useCartStore } from "../store/useCartStore"
+import { useNavigate } from "react-router-dom"
 
 export const CartPage = () => {
   const {
@@ -12,9 +13,28 @@ export const CartPage = () => {
     clearCart
   } = useCartStore()
 
+  const navigate = useNavigate()
+
   useEffect(() => {
     fetchCart()
-  }, [fetchCart])
+  }, [])
+
+  const handleGoToCheckout = () => {
+    // Đóng gói toàn bộ sản phẩm đang có trong giỏ hàng gửi sang Checkout
+    const checkoutItems = items.map(item => ({
+      product_id: item.product_id,
+      name: item.products?.name || "Sản phẩm", // Lấy tên sản phẩm từ populate quan hệ
+      quantity: item.quantity,
+      price: Number(item.products?.price || 0)
+    }));
+
+    navigate('/orders', {
+      state: {
+        isDirectBuy: false, // Luồng mua từ giỏ hàng thông thường
+        items: checkoutItems
+      }
+    });
+  };
 
   return (
     <div style={{ padding: '40px', maxWidth: '800px', margin: 'auto' }}>
@@ -28,11 +48,11 @@ export const CartPage = () => {
             <div
               key={item.id}
               style={{
-                display:       'flex',
-                alignItems:    'center',
-                padding:       '20px',
-                borderBottom:  '1px solid #eee',
-                gap:           '16px'
+                display: 'flex',
+                alignItems: 'center',
+                padding: '20px',
+                borderBottom: '1px solid #eee',
+                gap: '16px'
               }}
             >
               {/* Thông tin sản phẩm */}
@@ -54,7 +74,7 @@ export const CartPage = () => {
                 <span>{item.quantity}</span>
 
                 <button onClick={() => updateCartItem(item.product_id, item.quantity + 1)}
-                  // disabled={item.quantity >= (item.products?.stock ?? 0)}
+                // disabled={item.quantity >= (item.products?.stock ?? 0)}
                 >+</button>
               </div>
 
@@ -84,7 +104,9 @@ export const CartPage = () => {
             <button onClick={clearCart} style={{ color: 'red' }}>
               Xóa toàn bộ
             </button>
-            <button style={{ background: '#007bff', color: 'white', padding: '10px 24px' }}>
+            <button
+              onClick={handleGoToCheckout}
+              style={{ background: '#007bff', color: 'white', padding: '10px 24px' }}>
               Đặt hàng
             </button>
           </div>

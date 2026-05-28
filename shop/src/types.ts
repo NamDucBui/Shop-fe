@@ -15,3 +15,10 @@ export interface ApiResponse<T>{
     message?: string
     success: boolean
 }
+
+export interface CartItem {
+  id: number
+  product_id: number
+  quantity: number
+  products: Product
+}
