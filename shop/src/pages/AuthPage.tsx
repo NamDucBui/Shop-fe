@@ -1,64 +1,122 @@
 // src/pages/AuthPage.tsx
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { apiClient } from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import { useForm } from 'react-hook-form'
+import { Link, useNavigate } from 'react-router-dom'
+import { apiClient } from '../api/client'
+import { useAuth } from '../context/AuthContext'
+
+interface AuthFormData {
+  name?: string
+  email: string
+  password: string
+  confirmPassword?: string
+}
 
 export const AuthPage = ({ isLogin }: { isLogin: boolean }) => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-  const {setUser} = useAuth()
+  const { setUser } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const endpoint = isLogin ? '/auth/login' : '/auth/register';
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    getValues
+  } = useForm<AuthFormData>()
+
+  const onSubmit = async (data: AuthFormData) => {
+    const endpoint = isLogin ? '/auth/login' : '/auth/register'
     try {
-      const res = await apiClient.post(endpoint, formData);
-      
+      const res = await apiClient.post(endpoint, data)
       if (isLogin) {
-        console.log("Đăng nhập thành công", res.data);
-        localStorage.setItem("token", res.data.token);
-        
-        setUser({name: res.data.user.name, email: res.data.user.email, role: res.data.user.role})
-        navigate('/'); 
+        localStorage.setItem("token", res.data.token)
+        setUser({ name: res.data.user.name, email: res.data.user.email, role: res.data.user.role })
+        navigate('/')
       } else {
-        console.log("Đăng ký thành công", res.data);
-        // Sau khi đăng ký, điều hướng về trang đăng nhập
-        navigate('/login'); 
+        navigate('/login')
       }
     } catch (err: any) {
-      const message = err.response?.data?.message
-                    || "Có lỗi xảy ra, vui lòng thử lại!"
-      alert(message)
+      alert(err.response?.data?.message || "Có lỗi xảy ra!")
     }
-  };
+  }
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '30px', border: '1px solid #ddd', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-      <h2 style={{ textAlign: 'center' }}>{isLogin ? 'Đăng nhập' : 'Đăng ký tài khoản'}</h2>
-      
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        {/* Chỉ hiện tên khi đăng ký */}
+    <div style={{ maxWidth: 400, margin: '50px auto', padding: 30, border: '1px solid #ddd', borderRadius: 12 }}>
+      <h2 style={{ textAlign: 'center' }}>{isLogin ? 'Đăng nhập' : 'Đăng ký'}</h2>
+
+      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Tên — chỉ hiện khi đăng ký */}
         {!isLogin && (
-          <input type="text" placeholder="Họ và tên" onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} required />
+          <div>
+            <input
+              placeholder="Họ và tên"
+              {...register('name', {
+                required: 'Vui lòng nhập họ tên',
+                minLength: { value: 2, message: 'Tối thiểu 2 ký tự' }
+              })}
+              style={{ width: '100%', padding: 10, borderRadius: 6, border: `1px solid ${errors.name ? '#e53935' : '#ccc'}`, boxSizing: 'border-box' }}
+            />
+            {errors.name && <p style={{ color: '#e53935', fontSize: 12, margin: '4px 0 0' }}>{errors.name.message}</p>}
+          </div>
         )}
-        
-        <input type="email" placeholder="Email" onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} required />
-        <input type="password" placeholder="Mật khẩu" onChange={(e) => setFormData({...formData, password: e.target.value})} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} required />
-        
-        <button type="submit" style={{ padding: '12px', background: '#e53935', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-          {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+
+        {/* Email */}
+        <div>
+          <input
+            type="email"
+            placeholder="Email"
+            {...register('email', {
+              required: 'Vui lòng nhập email',
+              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email không hợp lệ' }
+            })}
+            style={{ width: '100%', padding: 10, borderRadius: 6, border: `1px solid ${errors.email ? '#e53935' : '#ccc'}`, boxSizing: 'border-box' }}
+          />
+          {errors.email && <p style={{ color: '#e53935', fontSize: 12, margin: '4px 0 0' }}>{errors.email.message}</p>}
+        </div>
+
+        {/* Password */}
+        <div>
+          <input
+            type="password"
+            placeholder="Mật khẩu"
+            {...register('password', {
+              required: 'Vui lòng nhập mật khẩu',
+              minLength: { value: 6, message: 'Mật khẩu tối thiểu 6 ký tự' }
+            })}
+            style={{ width: '100%', padding: 10, borderRadius: 6, border: `1px solid ${errors.password ? '#e53935' : '#ccc'}`, boxSizing: 'border-box' }}
+          />
+          {errors.password && <p style={{ color: '#e53935', fontSize: 12, margin: '4px 0 0' }}>{errors.password.message}</p>}
+        </div>
+
+        {!isLogin && (
+          <div>
+            <input
+              type="password"
+              placeholder="Nhập lại mật khẩu"
+              {...register('confirmPassword', {
+                required: 'Vui lòng nhập lại mật khẩu',
+                validate: (value) => value === getValues("password") || "Mật khẩu không khớp"
+              })}
+              style={{ width: '100%', padding: 10, borderRadius: 6, border: `1px solid ${errors.confirmPassword ? '#e53935' : '#ccc'}`, boxSizing: 'border-box' }}
+            />
+            {errors.confirmPassword && <p style={{ color: '#e53935', fontSize: 12, margin: '4px 0 0' }}>{errors.confirmPassword.message}</p>}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          style={{ padding: 12, background: isSubmitting ? '#ccc' : '#e53935', color: 'white', border: 'none', borderRadius: 6, fontWeight: 'bold', cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
+        >
+          {isSubmitting ? 'Đang xử lý...' : (isLogin ? 'Đăng nhập' : 'Đăng ký')}
         </button>
       </form>
 
-      {/* Dòng điều hướng chuyển đổi */}
-      <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px' }}>
-        {isLogin ? (
-          <p>Chưa có tài khoản? <Link to="/register" style={{ color: '#e53935', fontWeight: 'bold' }}>Đăng ký ngay</Link></p>
-        ) : (
-          <p>Đã có tài khoản? <Link to="/login" style={{ color: '#e53935', fontWeight: 'bold' }}>Đăng nhập ngay</Link></p>
-        )}
+      <div style={{ marginTop: 20, textAlign: 'center', fontSize: 14 }}>
+        {isLogin
+          ? <p>Chưa có tài khoản? <Link to="/register" style={{ color: '#e53935', fontWeight: 'bold' }}>Đăng ký ngay</Link></p>
+          : <p>Đã có tài khoản? <Link to="/login" style={{ color: '#e53935', fontWeight: 'bold' }}>Đăng nhập ngay</Link></p>
+        }
       </div>
     </div>
-  );
-};
+  )
+}
